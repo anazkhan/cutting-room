@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Cutting Room</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme: light dark;
+  --bg:#FBF7EF; --surface:#FFFFFF; --surface-2:#F3EDE0; --border:#E2D8C4;
+  --text:#2A241C; --text-dim:#6B6152; --text-faint:#948A78;
+  --creator:#E36B3B; --creator-soft:rgba(227,107,59,0.10); --creator-strong:#C4552A;
+  --yorki:#1F8F86; --yorki-soft:rgba(31,143,134,0.10); --yorki-strong:#146F68;
+  --gold:#B8862E; --gold-soft:rgba(184,134,46,0.12);
+  --danger:#C9483C; --good:#3F8F46;
+  --shadow: 0 1px 2px rgba(30,24,14,0.06), 0 8px 24px -12px rgba(30,24,14,0.18);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14120F; --surface:#1C1915; --surface-2:#242019; --border:#38322A;
+    --text:#F3EEE4; --text-dim:#A79C8A; --text-faint:#6E6455;
+    --creator:#FF8A5C; --creator-soft:rgba(255,138,92,0.14); --creator-strong:#FFB088;
+    --yorki:#3FB6AC; --yorki-soft:rgba(63,182,172,0.14); --yorki-strong:#7DD4CB;
+    --gold:#E7B84E; --gold-soft:rgba(231,184,78,0.14);
+    --danger:#E88079; --good:#7FCB83;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.6);
+  }
+}
+*{box-sizing:border-box;}
+html,body{margin:0;}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:"IBM Plex Sans", system-ui, sans-serif;
+  padding:0 20px 64px;
+  font-size:15px; line-height:1.55;
+}
+h1,h2,h3{font-family:"Bricolage Grotesque", system-ui, sans-serif; text-wrap:balance; margin:0;}
+.mono{font-family:"IBM Plex Mono", ui-monospace, monospace;}
+a{color:inherit;}
+button{font-family:inherit; font-size:inherit; cursor:pointer;}
+::selection{background:var(--gold-soft);}
+
+.wrap{max-width:1080px; margin:0 auto;}
+
+header.top{
+  padding:40px 0 22px;
+  display:flex; flex-wrap:wrap; gap:18px 32px; align-items:flex-end; justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+.brand-eyebrow{
+  font-family:"IBM Plex Mono", monospace; font-size:11.5px; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--text-faint); margin-bottom:8px; display:flex; align-items:center; gap:8px;
+}
+.brand-eyebrow .rec{width:6px; height:6px; border-radius:50%; background:var(--danger); display:inline-block;}
+h1.title{font-size:clamp(28px,4vw,38px); font-weight:700; letter-spacing:-0.01em;}
+.subtitle{color:var(--text-dim); font-size:14.5px; max-width:46ch; margin-top:6px;}
+.legend{display:flex; gap:14px; flex-wrap:wrap;}
+.legend .chip{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--text-dim); font-family:"IBM Plex Mono",monospace;}
+.legend .dot{width:9px;height:9px;border-radius:2px;}
+.dot.creator{background:var(--creator);}
+.dot.yorki{background:var(--yorki);}
+.legend .live{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--good); font-family:"IBM Plex Mono",monospace;}
+.legend .live .pulse{width:7px;height:7px;border-radius:50%; background:var(--good); animation:pulse 1.6s ease-in-out infinite;}
+.legend .live.off .pulse{background:var(--danger); animation:none;}
+.legend .live.off{color:var(--danger);}
+@keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
+
+nav.tabs{
+  position:sticky; top:0; z-index:20; background:var(--bg);
+  display:flex; gap:4px; padding:14px 0; border-bottom:1px solid var(--border); flex-wrap:wrap;
+}
+nav.tabs button{
+  background:none; border:1px solid transparent; color:var(--text-dim);
+  padding:8px 14px; border-radius:8px; font-size:13.5px; font-weight:500;
+  transition:background .15s, color .15s;
+}
+nav.tabs button:hover{background:var(--surface-2); color:var(--text);}
+nav.tabs button.active{background:var(--surface-2); color:var(--text); border-color:var(--border);}
+nav.tabs button .n{font-family:"IBM Plex Mono",monospace; color:var(--text-faint); margin-right:6px;}
+
+section.panel{display:none; padding-top:32px;}
+section.panel.active{display:block;}
+
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  box-shadow:var(--shadow);
+}
+.sectionhead{display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:16px; flex-wrap:wrap;}
+.sectionhead h2{font-size:20px;}
+.sectionhead p{color:var(--text-dim); font-size:13.5px; margin-top:4px;}
+
+.strategy-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+@media (max-width:760px){.strategy-grid{grid-template-columns:1fr;}}
+.strategy-card{padding:24px 24px 26px; border-top:4px solid var(--accent);}
+.strategy-card.creator{--accent:var(--creator);}
+.strategy-card.yorki{--accent:var(--yorki);}
+.strategy-card .kicker{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;}
+.strategy-card h3{font-size:22px; margin-bottom:6px;}
+.strategy-card .position{color:var(--text-dim); font-size:14px; margin-bottom:18px;}
+.pillars{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px;}
+.pillars li{display:flex; gap:12px; align-items:flex-start;}
+.pillars .code{flex:none; width:40px; height:26px; border-radius:6px; background:var(--surface-2); color:var(--accent); font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+.strategy-card.creator .code{background:var(--creator-soft); color:var(--creator-strong);}
+.strategy-card.yorki .code{background:var(--yorki-soft); color:var(--yorki-strong);}
+.pillars .name{font-weight:600; font-size:13.8px;}
+.pillars .desc{color:var(--text-dim); font-size:13px; margin-top:1px;}
+.meta-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; padding-top:18px; border-top:1px dashed var(--border);}
+.meta-row .stat{font-size:12.5px; color:var(--text-dim);}
+.meta-row .stat b{color:var(--text); display:block; font-size:14px; font-family:"IBM Plex Mono",monospace;}
+.avoid{margin-top:16px; font-size:12.8px; color:var(--text-dim);}
+.avoid b{color:var(--text);}
+.playbook{margin-top:20px;}
+.playbook-list{list-style:none; margin:0; padding:0; counter-reset:pb; display:flex; flex-direction:column; gap:10px;}
+.playbook-list li{counter-increment:pb; display:grid; grid-template-columns:28px 1fr; gap:12px; font-size:13.3px; color:var(--text-dim); padding-bottom:10px; border-bottom:1px solid var(--border);}
+.playbook-list li:last-child{border-bottom:none; padding-bottom:0;}
+.playbook-list li::before{content:counter(pb,decimal-leading-zero); font-family:"IBM Plex Mono",monospace; color:var(--yorki-strong); font-size:12px; font-weight:600;}
+.playbook-list .pb-body b{color:var(--text); display:block; font-size:13.6px; margin-bottom:1px; font-weight:600;}
+.hooks{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;}
+.hooks span{font-family:"IBM Plex Mono",monospace; font-size:12px; background:var(--surface-2); border:1px solid var(--border); padding:5px 9px; border-radius:20px; color:var(--text-dim);}
+
+.studio-grid{display:grid; grid-template-columns:1.1fr 1fr; gap:20px; align-items:flex-start;}
+@media (max-width:820px){.studio-grid{grid-template-columns:1fr;}}
+.studio-form{padding:24px;}
+.field{margin-bottom:16px;}
+.field label{display:block; font-size:12.5px; font-weight:600; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em;}
+.field input[type=text], .field textarea, .field select{width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-family:inherit; font-size:13.8px;}
+.field textarea{resize:vertical; min-height:64px; line-height:1.5;}
+.field input:focus, .field textarea:focus, .field select:focus{outline:2px solid var(--gold); outline-offset:1px;}
+
+.mode-toggle{display:flex; gap:8px; flex-wrap:wrap;}
+.mode-toggle button{flex:1 1 110px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); font-size:12.5px; font-weight:600;}
+.mode-toggle button.on{color:var(--text); border-color:var(--gold); background:var(--gold-soft);}
+
+.input-with-mic{position:relative;}
+.input-with-mic textarea{padding-right:44px;}
+.mic-btn{position:absolute; right:6px; top:6px; width:32px; height:32px; border-radius:50%; padding:0; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); display:flex; align-items:center; justify-content:center;}
+.mic-btn svg{width:15px; height:15px;}
+.mic-btn:hover{color:var(--text); border-color:var(--gold);}
+.mic-btn.listening{background:var(--danger); border-color:var(--danger); color:#fff; animation:mic-pulse 1.4s ease-in-out infinite;}
+@keyframes mic-pulse{0%,100%{box-shadow:0 0 0 0 rgba(201,72,60,.35);} 50%{box-shadow:0 0 0 7px rgba(201,72,60,0);}}
+.mic-hint{font-size:11.5px; color:var(--text-faint); margin:-8px 0 14px;}
+
+.acct-toggle{display:flex; gap:8px;}
+.acct-toggle button{flex:1; padding:9px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim); font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:7px;}
+.acct-toggle button .dot{width:8px;height:8px;border-radius:2px;}
+.acct-toggle button.on{color:var(--text); border-color:currentColor;}
+.acct-toggle button[data-acct=creator].on{background:var(--creator-soft); border-color:var(--creator);}
+.acct-toggle button[data-acct=yorki].on{background:var(--yorki-soft); border-color:var(--yorki);}
+
+.btn{border:1px solid var(--border); background:var(--surface-2); color:var(--text); padding:10px 16px; border-radius:8px; font-size:13.5px; font-weight:600; display:inline-flex; align-items:center; gap:8px;}
+.btn:hover{border-color:var(--gold);}
+.btn.primary{background:var(--gold); border-color:var(--gold); color:#1C1400;}
+.btn.primary:hover{filter:brightness(1.06);}
+.btn.primary:disabled{opacity:.5; cursor:not-allowed; filter:none;}
+.btn:disabled{opacity:.5; cursor:not-allowed;}
+.btn.ghost{background:transparent;}
+.btn.small{padding:6px 10px; font-size:12px;}
+
+.hint{font-size:12px; color:var(--text-faint); margin-top:6px;}
+.hint.warn{color:var(--danger);}
+
+.cards-output{padding:24px; min-height:280px; display:flex; flex-direction:column;}
+.cards-output .empty{margin:auto; text-align:center; color:var(--text-faint); font-size:13px; max-width:26ch;}
+.cuecards{display:flex; flex-direction:column; gap:10px;}
+.cuecard{background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; display:grid; grid-template-columns:44px 1fr auto; gap:12px; align-items:flex-start;}
+.cuecard .tag{font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; color:var(--text-faint); padding-top:2px;}
+.cuecard.hook .tag{color:var(--gold);}
+.cuecard.cta .tag{color:var(--good);}
+.cuecard textarea{width:100%; background:transparent; border:none; color:var(--text); font-size:13.8px; line-height:1.5; resize:vertical; min-height:22px; padding:0; font-family:inherit;}
+.cuecard textarea:focus{outline:none;}
+.cuecard .removebeat{background:none; border:none; color:var(--text-faint); font-size:17px; line-height:1; padding:0 2px; margin-top:1px;}
+.cuecard .removebeat:hover{color:var(--danger);}
+.studio-actions{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+
+.pipeline-controls{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;}
+.filter-group{display:flex; gap:6px;}
+.filter-group button{border:1px solid var(--border); background:var(--surface); color:var(--text-dim); padding:6px 12px; border-radius:20px; font-size:12.5px; font-weight:600;}
+.filter-group button.on{background:var(--surface-2); color:var(--text);}
+.board{display:grid; grid-template-columns:repeat(4,minmax(220px,1fr)); gap:14px; overflow-x:auto; padding-bottom:6px;}
+@media (max-width:900px){.board{grid-auto-flow:column; grid-template-columns:none;} .board .col{min-width:240px;}}
+.col{display:flex; flex-direction:column; gap:10px;}
+.col .colhead{display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); padding:0 2px;}
+.col .colhead .count{font-family:"IBM Plex Mono",monospace; background:var(--surface-2); border-radius:10px; padding:1px 7px; font-size:11px;}
+.col .dropzone{display:flex; flex-direction:column; gap:8px; min-height:40px;}
+.pcard{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:11px 12px; display:flex; flex-direction:column; gap:7px; box-shadow:var(--shadow);}
+.pcard .top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+.pcard .ttl{font-size:13.3px; font-weight:600; line-height:1.35;}
+.pcard .abadge{flex:none; width:9px; height:9px; border-radius:2px; margin-top:4px;}
+.pcard .abadge.creator{background:var(--creator);}
+.pcard .abadge.yorki{background:var(--yorki);}
+.pcard .pillar{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--text-faint);}
+.pcard .actions{display:flex; justify-content:space-between; align-items:center; margin-top:2px;}
+.pcard .advance{font-size:11px; color:var(--gold); font-weight:600; background:none; border:none; padding:0;}
+.pcard .del{font-size:11px; color:var(--text-faint); background:none; border:none; padding:0;}
+.pcard .del:hover{color:var(--danger);}
+.emptycol{font-size:12px; color:var(--text-faint); border:1px dashed var(--border); border-radius:8px; padding:14px; text-align:center;}
+.addbar{display:none; gap:8px; margin-top:12px; flex-wrap:wrap;}
+.addbar.open{display:flex;}
+.addbar input, .addbar select{background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit;}
+.addbar input[type=text]{flex:1; min-width:180px;}
+
+.news-grid{display:flex; flex-direction:column; gap:12px; margin-top:16px;}
+.news-card{padding:16px 18px; display:flex; flex-direction:column; gap:8px;}
+.news-card .headline{font-weight:600; font-size:14.5px; line-height:1.4;}
+.news-card .src{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--gold); word-break:break-all;}
+.news-card .facts{font-size:13px; color:var(--text-dim); line-height:1.55; white-space:pre-wrap;}
+.news-card .angle{font-size:12.5px; color:var(--text-faint); font-style:italic;}
+.news-card .row{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:2px;}
+.news-form{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.news-form input{background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 10px; font-size:13px; font-family:inherit;}
+.news-form .full{grid-column:1/-1;}
+@media (max-width:600px){.news-form{grid-template-columns:1fr;}}
+.altsources{display:flex; flex-direction:column; gap:6px; margin-top:6px; padding:10px; background:var(--surface-2); border-radius:8px; border:1px solid var(--border);}
+.altsources .alt-row{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12px;}
+.altsources a{color:var(--gold); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.altsources button{font-size:11px; flex:none;}
+
+.swipe-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; margin-top:16px;}
+.swipe-card{padding:14px 15px; display:flex; flex-direction:column; gap:6px;}
+.swipe-card .handle{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:13.5px; display:flex; justify-content:space-between;}
+.swipe-card .niche{font-size:11px; color:var(--gold); background:var(--gold-soft); display:inline-block; padding:2px 8px; border-radius:20px; width:fit-content;}
+.swipe-card .note{font-size:12.6px; color:var(--text-dim); line-height:1.45;}
+.swipe-form{display:grid; grid-template-columns:1fr 1fr 2fr auto; gap:8px; margin-top:14px;}
+@media (max-width:700px){.swipe-form{grid-template-columns:1fr;}}
+.swipe-form input, .swipe-form select{background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 10px; font-size:13px; font-family:inherit;}
+
+.banner{display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--text-dim); background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; margin-bottom:18px;}
+.banner .dot{width:7px;height:7px;border-radius:50%; flex:none;}
+.banner.ok .dot{background:var(--good);}
+.banner.warn .dot{background:var(--danger);}
+
+footer.foot{margin-top:56px; padding-top:20px; border-top:1px solid var(--border); color:var(--text-faint); font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="brand-eyebrow"><span class="rec"></span>ROLLING &middot; TAKE 01</div>
+      <h1 class="title">The Cutting Room</h1>
+      <div class="subtitle">Content ops for two feeds: the founder's face and Yorki's product. Running locally, with real live research.</div>
+    </div>
+    <div class="legend">
+      <span class="chip"><span class="dot creator"></span>@anaz &mdash; creator</span>
+      <span class="chip"><span class="dot yorki"></span>@yorki &mdash; SaaS</span>
+      <span class="live" id="api-live"><span class="pulse"></span><span id="api-live-label">checking…</span></span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="overview" class="active"><span class="n">01</span>Overview</button>
+    <button data-tab="studio"><span class="n">02</span>Script Studio</button>
+    <button data-tab="news"><span class="n">03</span>News Desk</button>
+    <button data-tab="pipeline"><span class="n">04</span>Pipeline</button>
+    <button data-tab="swipe"><span class="n">05</span>Swipe File</button>
+  </nav>
+
+  <section class="panel active" id="panel-overview">
+    <div class="sectionhead">
+      <div>
+        <h2>Two accounts, one operator</h2>
+        <p>Creator sells trust. Yorki sells the product. Keep them in separate lanes and let the creator account funnel into Yorki &mdash; never the other way around.</p>
+      </div>
+    </div>
+    <div class="strategy-grid">
+      <div class="card strategy-card creator">
+        <div class="kicker">Personal &middot; @anaz</div>
+        <h3>The Creator Feed</h3>
+        <div class="position">A founder thinking out loud about AI, tech and startups &mdash; who happens to be building Yorki in public.</div>
+        <ul class="pillars">
+          <li><span class="code">AI</span><div><div class="name">AI &amp; Tech Explainer</div><div class="desc">One concept or one piece of news, broken down in plain language. Your reach engine.</div></div></li>
+          <li><span class="code">BIP</span><div><div class="name">Building In Public</div><div class="desc">Real numbers, real struggles building Yorki. Builds trust without pitching.</div></div></li>
+          <li><span class="code">YIW</span><div><div class="name">Yorki In The Wild</div><div class="desc">A story with Yorki inside it. Product mention, never a product pitch.</div></div></li>
+          <li><span class="code">HT</span><div><div class="name">Hot Take</div><div class="desc">A 20&ndash;30s opinion on AI news. Cheapest to film, best for reach.</div></div></li>
+          <li><span class="code">BTB</span><div><div class="name">Behind The Build</div><div class="desc">What you shipped this week, what broke. Founder diary, not a demo.</div></div></li>
+        </ul>
+        <div class="meta-row">
+          <div class="stat">Cadence<b>4&ndash;5 reels / wk</b></div>
+          <div class="stat">Mix<b>2 AI : 1 BIP : 1 HT : 1 YIW</b></div>
+          <div class="stat">Stories<b>daily, unscripted</b></div>
+        </div>
+        <div class="avoid"><b>Avoid:</b> pitching Yorki in the first 3 seconds, corporate tone, reading off a script.</div>
+        <div class="hooks"><span>"Nobody's telling you this about&hellip;"</span><span>"I was wrong about&hellip;"</span><span>"A customer did something today that&hellip;"</span></div>
+      </div>
+      <div class="card strategy-card yorki">
+        <div class="kicker">Business &middot; @yorki</div>
+        <h3>The Yorki Feed</h3>
+        <div class="position">The sales assistant every Indian &amp; GCC SMB wishes they had.</div>
+        <ul class="pillars">
+          <li><span class="code">PA</span><div><div class="name">Problem Awareness</div><div class="desc">Dramatize the pain: a DM answered 6 hours late, a lead gone cold.</div></div></li>
+          <li><span class="code">PE</span><div><div class="name">Product Education</div><div class="desc">How the RAG assistant answers a real question; hot/warm/cold explained.</div></div></li>
+          <li><span class="code">DP</span><div><div class="name">Demo &amp; Proof</div><div class="desc">Screen-recorded conversation &rarr; WhatsApp lead alert.</div></div></li>
+          <li><span class="code">LT</span><div><div class="name">Local Trust</div><div class="desc">Named use-cases: a salon, a clinic, a real-estate broker, a restaurant.</div></div></li>
+          <li><span class="code">FV</span><div><div class="name">Founder Voice</div><div class="desc">A 15s clip of you explaining one feature, re-cut from the creator account.</div></div></li>
+          <li><span class="code">SP</span><div><div class="name">Social Proof</div><div class="desc">Screenshots of real replies, saved time, as they start coming in.</div></div></li>
+        </ul>
+        <div class="meta-row">
+          <div class="stat">Cadence<b>3&ndash;4 posts / wk</b></div>
+          <div class="stat">Tone<b>calm, proof-led</b></div>
+          <div class="stat">CTA<b>"DM DEMO" / bio link</b></div>
+        </div>
+        <div class="avoid"><b>Avoid:</b> stock SaaS footage, jargon like "RAG pipeline", hype without a screen recording.</div>
+        <div class="playbook">
+          <div class="kicker" style="margin-top:2px;">Demo videos, phone-only</div>
+          <ol class="playbook-list">
+            <li><span class="pb-body"><b>Live chat screen-record</b> &mdash; Yorki answers via RAG, you voice over what's happening.</span></li>
+            <li><span class="pb-body"><b>The alert cut</b> &mdash; hard cut to the owner's phone lighting up with a HOT lead.</span></li>
+            <li><span class="pb-body"><b>Silent inbox vs Yorki</b> &mdash; split screen: unread DMs vs a 4-second reply.</span></li>
+            <li><span class="pb-body"><b>A day with vs without</b> &mdash; narrated 30s walkthrough of an owner's day.</span></li>
+            <li><span class="pb-body"><b>One-feature spotlight</b> &mdash; 20s on exactly one thing.</span></li>
+            <li><span class="pb-body"><b>Founder explainer</b> &mdash; three single-cut sentences on RAG + WhatsApp handoff.</span></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-studio">
+    <div class="sectionhead">
+      <div>
+        <h2>Script Studio</h2>
+        <p>Give it a topic. It comes back as a hook, then single-sentence cue cards &mdash; one sentence per cut.</p>
+      </div>
+    </div>
+    <div id="studio-banner"></div>
+    <div class="studio-grid">
+      <div class="card studio-form">
+        <div class="field">
+          <label>Which feed</label>
+          <div class="acct-toggle">
+            <button type="button" data-acct="creator" class="on"><span class="dot" style="background:var(--creator)"></span>Creator</button>
+            <button type="button" data-acct="yorki"><span class="dot" style="background:var(--yorki)"></span>Yorki</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Mode</label>
+          <div class="mode-toggle" id="mode-toggle">
+            <button type="button" data-mode="new" class="on">New idea</button>
+            <button type="button" data-mode="remix">Remix a reel I liked</button>
+            <button type="button" data-mode="news">News / trending</button>
+          </div>
+        </div>
+        <div class="field" id="reel-link-field" style="display:none;">
+          <label><span id="reel-link-label">Reel link</span> <span style="font-weight:400; text-transform:none; color:var(--text-faint);">(optional, for your own reference)</span></label>
+          <input type="text" id="reel-link-input" placeholder="https://instagram.com/reel/&hellip;">
+        </div>
+        <div class="field">
+          <label id="topic-label">Topic</label>
+          <div class="input-with-mic">
+            <textarea id="topic-input" rows="3" placeholder="e.g. why WhatsApp is the real storefront for Indian SMBs"></textarea>
+            <button type="button" class="mic-btn" id="topic-mic" title="Speak instead of typing" aria-label="Dictate topic">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+          </div>
+          <div class="hint" style="margin-top:6px;">Rough is fine &mdash; half-formed thoughts, a voice ramble. It'll find the idea and clean it up.</div>
+        </div>
+        <div class="field">
+          <label id="context-label">Context <span style="font-weight:400; text-transform:none; color:var(--text-faint);">(optional &mdash; a stat, a story, an angle)</span></label>
+          <div class="input-with-mic">
+            <textarea id="context-input" placeholder="Any detail worth weaving in&hellip;"></textarea>
+            <button type="button" class="mic-btn" id="context-mic" title="Speak instead of typing" aria-label="Dictate context">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="mic-hint" id="mic-unsupported-hint" style="display:none;">Voice input isn't supported in this browser &mdash; type instead.</div>
+        <button class="btn primary" id="breakdown-btn" style="width:100%; justify-content:center;">Break it down with Claude</button>
+        <div class="hint" id="studio-hint">Filmed as single-cut takes: say the hook, cut, say beat one, cut, say beat two&hellip;</div>
+      </div>
+      <div class="card cards-output" id="cards-output">
+        <div class="empty">Your cue cards will show up here.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-news">
+    <div class="sectionhead">
+      <div>
+        <h2>News Desk</h2>
+        <p>Type a topic or paste a link, hit Research &mdash; the server fetches and verifies it live via Claude's web search/fetch, right now, no scheduling.</p>
+      </div>
+    </div>
+    <div id="news-banner"></div>
+    <div class="card" style="padding:16px 18px;">
+      <div class="news-form">
+        <input type="text" id="nd-headline" class="full" placeholder="Topic, headline, or leave blank if pasting a link">
+        <input type="text" id="nd-link" placeholder="Link (paste here to research a specific URL)">
+        <input type="text" id="nd-angle" placeholder="Suggested angle (optional)">
+        <div class="full input-with-mic">
+          <textarea id="nd-facts" rows="3" placeholder="Key facts (auto-filled by Research, or type your own)&hellip;" style="padding-right:44px;"></textarea>
+          <button type="button" class="mic-btn" id="nd-facts-mic" title="Speak instead of typing" aria-label="Dictate facts">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </button>
+        </div>
+        <div class="full" id="nd-alt-sources"></div>
+        <button class="btn small full" id="nd-research" style="justify-content:center;">Research this (live)</button>
+        <button class="btn primary small full" id="nd-save" style="justify-content:center;">Add to News Desk</button>
+      </div>
+    </div>
+    <div class="news-grid" id="news-grid"></div>
+  </section>
+
+  <section class="panel" id="panel-pipeline">
+    <div class="sectionhead">
+      <div>
+        <h2>Content Pipeline</h2>
+        <p>Every idea, from first thought to posted. Click a card's status to move it forward.</p>
+      </div>
+      <button class="btn primary" id="add-idea-toggle">+ Add idea</button>
+    </div>
+    <div id="pipeline-banner"></div>
+    <div class="addbar" id="addbar">
+      <input type="text" id="new-title" placeholder="Idea title&hellip;">
+      <select id="new-account"><option value="creator">Creator</option><option value="yorki">Yorki</option></select>
+      <select id="new-pillar"></select>
+      <button class="btn primary small" id="new-save">Add to Idea column</button>
+    </div>
+    <div class="pipeline-controls">
+      <div class="filter-group" id="pipeline-filter">
+        <button class="on" data-filter="all">All</button>
+        <button data-filter="creator">Creator</button>
+        <button data-filter="yorki">Yorki</button>
+      </div>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <section class="panel" id="panel-swipe">
+    <div class="sectionhead">
+      <div>
+        <h2>Swipe File</h2>
+        <p>Creators worth watching &mdash; for a hook style, an edit pattern, a demo format to steal (respectfully).</p>
+      </div>
+    </div>
+    <div id="swipe-banner"></div>
+    <div class="card" style="padding:16px 18px;">
+      <div class="swipe-form">
+        <input type="text" id="sw-handle" placeholder="@handle">
+        <select id="sw-niche">
+          <option>AI / Tech</option><option>Startup / Founder</option><option>SaaS / B2B</option>
+          <option>UGC / Demo style</option><option>India / GCC business</option><option>Editing style</option>
+        </select>
+        <input type="text" id="sw-note" placeholder="What to steal from them&hellip;">
+        <button class="btn primary small" id="sw-save">Add</button>
+      </div>
+    </div>
+    <div class="swipe-grid" id="swipe-grid"></div>
+  </section>
+
+  <footer class="foot">The Cutting Room &middot; running locally on your machine.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function truncate(s, n){ return s.length > n ? s.slice(0, n-1).trim()+"…" : s; }
+
+  // ---------------- API client ----------------
+  async function apiError(r){
+    let msg = r.statusText;
+    try{ const j = await r.json(); msg = j.message || j.error || msg; }catch{}
+    return new Error(msg);
+  }
+  const api = {
+    async get(p){ const r = await fetch(p); if(!r.ok) throw await apiError(r); return r.json(); },
+    async post(p, body){ const r = await fetch(p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})}); if(!r.ok) throw await apiError(r); return r.json(); },
+    async patch(p, body){ const r = await fetch(p,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(body||{})}); if(!r.ok) throw await apiError(r); return r.json(); },
+    async del(p){ const r = await fetch(p,{method:"DELETE"}); if(!r.ok && r.status!==204) throw await apiError(r); }
+  };
+
+  let state = { pipeline:[], scripts:[], swipe:[], newsdesk:[] };
+
+  function banner(el, ok, text){ el.innerHTML = '<div class="banner '+(ok?"ok":"warn")+'"><span class="dot"></span>'+esc(text)+'</div>'; }
+
+  // ---------------- tabs ----------------
+  document.querySelectorAll("nav.tabs button").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.remove("active"));
+      document.querySelectorAll("section.panel").forEach(p=>p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("panel-"+btn.dataset.tab).classList.add("active");
+    });
+  });
+
+  // ---------------- pipeline ----------------
+  const STATUSES = ["idea","scripted","filmed","posted"];
+  const STATUS_LABEL = {idea:"Idea", scripted:"Scripted", filmed:"Filmed", posted:"Posted"};
+  const PILLARS = {
+    creator: [["AI","AI & Tech Explainer"],["BIP","Building In Public"],["YIW","Yorki In The Wild"],["HT","Hot Take"],["BTB","Behind The Build"]],
+    yorki: [["PA","Problem Awareness"],["PE","Product Education"],["DP","Demo & Proof"],["LT","Local Trust"],["FV","Founder Voice"],["SP","Social Proof"]]
+  };
+  let pipelineFilter = "all";
+
+  function pillarName(account, code){
+    const list = PILLARS[account] || [];
+    const found = list.find(p => p[0]===code);
+    return found ? found[1] : (code || "");
+  }
+
+  function renderPipeline(){
+    const board = document.getElementById("board");
+    const items = state.pipeline.filter(it => pipelineFilter==="all" || it.account===pipelineFilter);
+    let html = "";
+    STATUSES.forEach(function(status){
+      const colItems = items.filter(it => it.status===status);
+      html += '<div class="col"><div class="colhead"><span>'+STATUS_LABEL[status]+'</span><span class="count">'+colItems.length+'</span></div><div class="dropzone">';
+      if(!colItems.length){ html += '<div class="emptycol">Nothing here yet</div>'; }
+      else{
+        colItems.forEach(function(it){
+          const nextIdx = STATUSES.indexOf(it.status)+1;
+          const nextLabel = nextIdx < STATUSES.length ? "Mark "+STATUS_LABEL[STATUSES[nextIdx]] : "";
+          html += '<div class="pcard">'
+            + '<div class="top"><div class="ttl">'+esc(it.title)+'</div><span class="abadge '+it.account+'"></span></div>'
+            + '<div class="pillar">'+esc(pillarName(it.account, it.pillar))+'</div>'
+            + '<div class="actions">'
+              + (nextLabel ? '<button class="advance" data-action="advance" data-id="'+it.id+'">'+nextLabel+' &rarr;</button>' : '<span></span>')
+              + '<button class="del" data-action="delete-pipeline" data-id="'+it.id+'">remove</button>'
+            + '</div></div>';
+        });
+      }
+      html += '</div></div>';
+    });
+    board.innerHTML = html;
+  }
+
+  document.getElementById("pipeline-filter").addEventListener("click", function(e){
+    const b = e.target.closest("button[data-filter]");
+    if(!b) return;
+    pipelineFilter = b.dataset.filter;
+    document.querySelectorAll("#pipeline-filter button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    renderPipeline();
+  });
+
+  document.getElementById("board").addEventListener("click", async function(e){
+    const adv = e.target.closest('[data-action="advance"]');
+    const del = e.target.closest('[data-action="delete-pipeline"]');
+    try{
+      if(adv){
+        const item = state.pipeline.find(x=>x.id===adv.dataset.id);
+        const next = STATUSES[STATUSES.indexOf(item.status)+1];
+        await api.patch("/api/pipeline/"+adv.dataset.id, {status: next});
+        item.status = next;
+        renderPipeline();
+      }
+      if(del){
+        await api.del("/api/pipeline/"+del.dataset.id);
+        state.pipeline = state.pipeline.filter(x=>x.id!==del.dataset.id);
+        renderPipeline();
+      }
+    }catch(err){ banner(document.getElementById("pipeline-banner"), false, err.message); }
+  });
+
+  function addIdeaFormPillars(){
+    const acc = document.getElementById("new-account").value;
+    document.getElementById("new-pillar").innerHTML = PILLARS[acc].map(p => '<option value="'+p[0]+'">'+p[0]+' &mdash; '+p[1]+'</option>').join("");
+  }
+  document.getElementById("new-account").addEventListener("change", addIdeaFormPillars);
+  addIdeaFormPillars();
+
+  document.getElementById("add-idea-toggle").addEventListener("click", function(){
+    document.getElementById("addbar").classList.toggle("open");
+  });
+
+  document.getElementById("new-save").addEventListener("click", async function(){
+    const title = document.getElementById("new-title").value.trim();
+    if(!title) return;
+    try{
+      const item = await api.post("/api/pipeline", {
+        title, account: document.getElementById("new-account").value,
+        pillar: document.getElementById("new-pillar").value, status:"idea"
+      });
+      state.pipeline.unshift(item);
+      renderPipeline();
+      document.getElementById("new-title").value = "";
+      document.getElementById("addbar").classList.remove("open");
+    }catch(err){ banner(document.getElementById("pipeline-banner"), false, err.message); }
+  });
+
+  // ---------------- script studio ----------------
+  let studioAccount = "creator";
+  let studioMode = "new";
+
+  document.querySelectorAll(".acct-toggle button[data-acct]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      studioAccount = btn.dataset.acct;
+      document.querySelectorAll(".acct-toggle button[data-acct]").forEach(b=>b.classList.remove("on"));
+      btn.classList.add("on");
+    });
+  });
+
+  const MODE_COPY = {
+    new: { reel:false, topicLabel:"Topic", topicPlaceholder:"e.g. why WhatsApp is the real storefront for Indian SMBs", contextNote:"(optional — a stat, a story, an angle)" },
+    remix: { reel:true, reelLabel:"Reel link", reelPlaceholder:"https://instagram.com/reel/…", topicLabel:"What happens in the reel", topicPlaceholder:"Paste the caption/transcript, or describe it…", contextNote:"(optional — what should this become, for you?)" },
+    news: { reel:true, reelLabel:"Article / post link", reelPlaceholder:"https://…", topicLabel:"The story so far", topicPlaceholder:"Headline, key facts, why it's trending…", contextNote:"(optional — why this matters to you or your audience)" }
+  };
+
+  function applyStudioMode(mode){
+    studioMode = mode;
+    document.querySelectorAll("#mode-toggle button").forEach(x => x.classList.toggle("on", x.dataset.mode===mode));
+    const copy = MODE_COPY[mode];
+    const reelField = document.getElementById("reel-link-field");
+    document.getElementById("topic-label").textContent = copy.topicLabel;
+    document.getElementById("topic-input").placeholder = copy.topicPlaceholder;
+    document.querySelector("#context-label span").textContent = copy.contextNote;
+    if(copy.reel){
+      reelField.style.display = "";
+      document.getElementById("reel-link-label").textContent = copy.reelLabel;
+      document.getElementById("reel-link-input").placeholder = copy.reelPlaceholder;
+    } else { reelField.style.display = "none"; }
+  }
+  document.getElementById("mode-toggle").addEventListener("click", function(e){
+    const b = e.target.closest("button[data-mode]");
+    if(b) applyStudioMode(b.dataset.mode);
+  });
+
+  function renumberBeats(){
+    document.querySelectorAll("#cards-output .cuecard.beat .tag").forEach((tag,i) => { tag.textContent = String(i+1).padStart(2,"0"); });
+  }
+  function cueRow(kind, tag, text, removable){
+    const cls = kind==="hook"?"hook":kind==="cta"?"cta":"beat";
+    const remove = removable ? '<button type="button" class="removebeat" data-action="remove-beat" title="Remove this line">&times;</button>' : '';
+    return '<div class="cuecard '+cls+'"><div class="tag">'+tag+'</div><textarea rows="1" oninput="this.style.height=0;this.style.height=this.scrollHeight+2+\'px\'">'+esc(text||"")+'</textarea>'+remove+'</div>';
+  }
+  function renderCueCards(data){
+    const out = document.getElementById("cards-output");
+    let html = '<div class="cuecards">';
+    html += cueRow("hook","HOOK", data.hook, false);
+    (data.beats||[]).forEach((b,i) => { html += cueRow("beat", String(i+1).padStart(2,"0"), b, true); });
+    html += cueRow("cta","CTA", data.cta, false);
+    html += '</div><div class="studio-actions"><button class="btn primary" id="save-script-btn">Save to script library</button><button class="btn ghost" id="add-beat-btn">+ Add beat</button></div>';
+    out.innerHTML = html;
+    document.getElementById("save-script-btn").addEventListener("click", saveCurrentScript);
+    document.getElementById("add-beat-btn").addEventListener("click", function(){
+      const ctaCard = out.querySelector(".cuecard.cta");
+      const div = document.createElement("div");
+      div.innerHTML = cueRow("beat","00","", true);
+      ctaCard.parentNode.insertBefore(div.firstChild, ctaCard);
+      renumberBeats();
+    });
+  }
+  document.getElementById("cards-output").addEventListener("click", function(e){
+    const rm = e.target.closest('[data-action="remove-beat"]');
+    if(!rm) return;
+    rm.closest(".cuecard").remove();
+    renumberBeats();
+  });
+  function readCueCards(){
+    const out = document.getElementById("cards-output");
+    const cards = Array.from(out.querySelectorAll(".cuecard"));
+    if(!cards.length) return null;
+    const hook = cards[0].querySelector("textarea").value.trim();
+    const cta = cards[cards.length-1].querySelector("textarea").value.trim();
+    const beats = cards.slice(1,-1).map(c => c.querySelector("textarea").value.trim()).filter(Boolean);
+    return {hook, beats, cta};
+  }
+
+  function setStudioLoading(on){
+    const btn = document.getElementById("breakdown-btn");
+    btn.disabled = on;
+    btn.textContent = on ? "Thinking…" : "Break it down with Claude";
+  }
+
+  document.getElementById("breakdown-btn").addEventListener("click", async function(){
+    const topic = document.getElementById("topic-input").value.trim();
+    const context = document.getElementById("context-input").value.trim();
+    const hintEl = document.getElementById("studio-hint");
+    if(!topic){
+      const msg = {new:"Give it a topic first.", remix:"Paste, or speak, what happens in the reel first.", news:"Paste, or speak, what you know about the story first."};
+      hintEl.textContent = msg[studioMode]; hintEl.className = "hint warn"; return;
+    }
+    setStudioLoading(true);
+    hintEl.textContent = "Thinking through your hook and beats…"; hintEl.className = "hint";
+    try{
+      const data = await api.post("/api/breakdown", {account: studioAccount, mode: studioMode, topic, context});
+      renderCueCards(data);
+      hintEl.textContent = "Edit any line, then save it to your library.";
+    }catch(err){
+      hintEl.textContent = err.message || "Couldn't generate a breakdown.";
+      hintEl.className = "hint warn";
+      if(!document.querySelector(".cuecards")) renderCueCards({hook:"", beats:["",""], cta:""});
+    }finally{ setStudioLoading(false); }
+  });
+
+  async function saveCurrentScript(){
+    const topic = document.getElementById("topic-input").value.trim();
+    const cue = readCueCards();
+    if(!topic || !cue || (!cue.hook && !cue.beats.length)){
+      banner(document.getElementById("studio-banner"), false, "Add a topic and at least a hook or a beat before saving.");
+      return;
+    }
+    const sourceLink = MODE_COPY[studioMode].reel ? document.getElementById("reel-link-input").value.trim() : "";
+    try{
+      await api.post("/api/scripts", {topic, account: studioAccount, mode: studioMode, sourceLink, hook: cue.hook, beats: cue.beats, cta: cue.cta});
+      banner(document.getElementById("studio-banner"), true, "Saved to your script library and added to the Pipeline.");
+      await loadState();
+    }catch(err){ banner(document.getElementById("studio-banner"), false, err.message); }
+  }
+
+  // ---------------- news desk ----------------
+  function renderNewsDesk(){
+    const grid = document.getElementById("news-grid");
+    if(!state.newsdesk.length){
+      grid.innerHTML = '<div class="emptycol">Nothing here yet &mdash; type a topic or paste a link above and hit Research.</div>';
+      return;
+    }
+    grid.innerHTML = state.newsdesk.map(it => (
+      '<div class="card news-card">'
+      + '<div class="row"><div class="headline">'+esc(it.headline)+'</div><button class="del" data-action="delete-news" data-id="'+it.id+'" style="background:none;border:none;color:var(--text-faint);font-size:11px;flex:none;">remove</button></div>'
+      + (it.sourceLink ? '<a class="src" href="'+esc(it.sourceLink)+'" target="_blank" rel="noopener noreferrer">'+esc(it.sourceLink)+'</a>' : '')
+      + (it.facts ? '<div class="facts">'+esc(it.facts)+'</div>' : '')
+      + (it.angle ? '<div class="angle">Angle: '+esc(it.angle)+'</div>' : '')
+      + '<div class="row"><span></span><button class="btn primary small" data-action="use-news" data-id="'+it.id+'">Use in Script Studio</button></div>'
+      + '</div>'
+    )).join("");
+  }
+
+  document.getElementById("news-grid").addEventListener("click", async function(e){
+    const del = e.target.closest('[data-action="delete-news"]');
+    const use = e.target.closest('[data-action="use-news"]');
+    if(del){
+      try{
+        await api.del("/api/newsdesk/"+del.dataset.id);
+        state.newsdesk = state.newsdesk.filter(x=>x.id!==del.dataset.id);
+        renderNewsDesk();
+      }catch(err){ banner(document.getElementById("news-banner"), false, err.message); }
+    }
+    if(use){
+      const story = state.newsdesk.find(x=>x.id===use.dataset.id);
+      if(!story) return;
+      document.querySelector('nav.tabs button[data-tab="studio"]').click();
+      applyStudioMode("news");
+      document.getElementById("topic-input").value = [story.headline, story.facts].filter(Boolean).join("\n\n");
+      document.getElementById("reel-link-input").value = story.sourceLink || "";
+      document.getElementById("context-input").value = story.angle || "";
+      document.getElementById("topic-input").focus();
+    }
+  });
+
+  document.getElementById("nd-research").addEventListener("click", async function(){
+    const link = document.getElementById("nd-link").value.trim();
+    const headline = document.getElementById("nd-headline").value.trim();
+    const input = link || headline;
+    const altBox = document.getElementById("nd-alt-sources");
+    if(!input){ banner(document.getElementById("news-banner"), false, "Type a topic or paste a link first."); return; }
+    const btn = document.getElementById("nd-research");
+    btn.disabled = true; btn.textContent = "Researching… (can take 10-30s)";
+    altBox.innerHTML = "";
+    try{
+      const r = await api.post("/api/research", {input});
+      document.getElementById("nd-headline").value = r.headline || headline;
+      document.getElementById("nd-link").value = r.sourceLink || link;
+      document.getElementById("nd-facts").value = r.facts || "";
+      document.getElementById("nd-angle").value = r.angle || "";
+      if(r.sources && r.sources.length){
+        altBox.innerHTML = '<div class="altsources">' + r.sources.map(s =>
+          '<div class="alt-row"><a href="'+esc(s.url)+'" target="_blank" rel="noopener noreferrer">'+esc(s.title||s.url)+'</a>'
+          + '<button type="button" class="btn small" data-alt-url="'+esc(s.url)+'">Use as source</button></div>'
+        ).join("") + '</div>';
+      }
+      banner(document.getElementById("news-banner"), true, "Researched live — review the facts, then Add to News Desk.");
+    }catch(err){
+      banner(document.getElementById("news-banner"), false, err.message);
+    }finally{
+      btn.disabled = false; btn.textContent = "Research this (live)";
+    }
+  });
+  document.getElementById("nd-alt-sources").addEventListener("click", function(e){
+    const b = e.target.closest("[data-alt-url]");
+    if(!b) return;
+    document.getElementById("nd-link").value = b.dataset.altUrl;
+  });
+
+  document.getElementById("nd-save").addEventListener("click", async function(){
+    const headline = document.getElementById("nd-headline").value.trim();
+    const facts = document.getElementById("nd-facts").value.trim();
+    if(!headline && !facts) return;
+    try{
+      const item = await api.post("/api/newsdesk", {
+        headline: headline || truncate(facts, 80),
+        sourceLink: document.getElementById("nd-link").value.trim(),
+        facts, angle: document.getElementById("nd-angle").value.trim()
+      });
+      state.newsdesk.unshift(item);
+      renderNewsDesk();
+      ["nd-headline","nd-link","nd-angle","nd-facts"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("nd-alt-sources").innerHTML = "";
+    }catch(err){ banner(document.getElementById("news-banner"), false, err.message); }
+  });
+
+  // ---------------- swipe file ----------------
+  function renderSwipe(){
+    const grid = document.getElementById("swipe-grid");
+    if(!state.swipe.length){
+      grid.innerHTML = '<div class="emptycol" style="grid-column:1/-1;">No creators saved yet.</div>';
+      return;
+    }
+    grid.innerHTML = state.swipe.map(it => (
+      '<div class="card swipe-card">'
+      + '<div class="handle">'+esc(it.handle)+'<button data-action="delete-swipe" data-id="'+it.id+'" style="background:none;border:none;color:var(--text-faint);font-size:11px;">remove</button></div>'
+      + '<span class="niche">'+esc(it.niche)+'</span>'
+      + (it.note ? '<div class="note">'+esc(it.note)+'</div>' : '')
+      + '</div>'
+    )).join("");
+  }
+  document.getElementById("swipe-grid").addEventListener("click", async function(e){
+    const del = e.target.closest('[data-action="delete-swipe"]');
+    if(!del) return;
+    try{
+      await api.del("/api/swipe/"+del.dataset.id);
+      state.swipe = state.swipe.filter(x=>x.id!==del.dataset.id);
+      renderSwipe();
+    }catch(err){ banner(document.getElementById("swipe-banner"), false, err.message); }
+  });
+  document.getElementById("sw-save").addEventListener("click", async function(){
+    const handle = document.getElementById("sw-handle").value.trim().replace(/^@/,"");
+    if(!handle) return;
+    try{
+      const item = await api.post("/api/swipe", {
+        handle: "@"+handle, niche: document.getElementById("sw-niche").value, note: document.getElementById("sw-note").value.trim()
+      });
+      state.swipe.unshift(item);
+      renderSwipe();
+      document.getElementById("sw-handle").value = "";
+      document.getElementById("sw-note").value = "";
+    }catch(err){ banner(document.getElementById("swipe-banner"), false, err.message); }
+  });
+
+  // ---------------- voice dictation ----------------
+  let currentRecognition = null;
+  function attachMic(btnId, fieldId){
+    const btn = document.getElementById(btnId);
+    const field = document.getElementById(fieldId);
+    const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!Ctor){ btn.style.display = "none"; document.getElementById("mic-unsupported-hint").style.display = "block"; return; }
+    let recog = null, listening = false, baseValue = "";
+    btn.addEventListener("click", function(){
+      if(listening){ recog.stop(); return; }
+      if(currentRecognition) currentRecognition.stop();
+      baseValue = field.value.trim() ? field.value.trim() + " " : "";
+      recog = new Ctor();
+      recog.lang = navigator.language || "en-US";
+      recog.continuous = true;
+      recog.interimResults = true;
+      recog.onresult = function(e){
+        let interim = "", final = "";
+        for(let i = e.resultIndex; i < e.results.length; i++){
+          const t = e.results[i][0].transcript;
+          if(e.results[i].isFinal) final += t + " "; else interim += t;
+        }
+        if(final) baseValue += final;
+        field.value = baseValue + interim;
+      };
+      recog.onerror = function(e){
+        listening = false; btn.classList.remove("listening");
+        if(e.error === "not-allowed" || e.error === "service-not-allowed"){
+          btn.style.display = "none";
+          const h = document.getElementById("mic-unsupported-hint");
+          h.textContent = "Microphone access was blocked — type instead.";
+          h.style.display = "block";
+        }
+      };
+      recog.onend = function(){ listening = false; btn.classList.remove("listening"); if(currentRecognition === recog) currentRecognition = null; };
+      try{ recog.start(); listening = true; currentRecognition = recog; btn.classList.add("listening"); }
+      catch(err){ listening = false; }
+    });
+  }
+  attachMic("topic-mic", "topic-input");
+  attachMic("context-mic", "context-input");
+  attachMic("nd-facts-mic", "nd-facts");
+
+  // ---------------- boot ----------------
+  function markServerConnected(){
+    const live = document.getElementById("api-live");
+    const label = document.getElementById("api-live-label");
+    live.classList.remove("off");
+    label.textContent = "connected to local server";
+  }
+
+  async function loadState(){
+    try{
+      state = await api.get("/api/state");
+      renderPipeline(); renderSwipe(); renderNewsDesk(); markServerConnected();
+    }catch(err){
+      banner(document.getElementById("pipeline-banner"), false, "Couldn't reach the server: "+err.message);
+    }
+  }
+  loadState();
+})();
+</script>
+</body>
+</html>
